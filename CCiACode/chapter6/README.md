@@ -57,3 +57,34 @@ tail-->dummy_node
 A线程执行完后，B准备执行comparison时的queue状态
 一旦此时old_tail的值发生改变，那么comparison的不成立，后续操作会导致head指向dummy_node之后
 
+
+
+
+
+### 6.12
+
+对于一个look-up table，如何获取它的整体snapshot?
+
+在这个过程中，可能会存在其他线程修改该table的bucket，因此要lock bucket_type的mutex，防止其他线程修改bucket_type
+
+而且使用的lock是unique lock
+
+```c++
+std::vector<std::unique_lock<boost::shared_mutex> > locks;
+for(unsigned i=0;i<buckets.size();++i)
+{
+        locks.push_back(
+            std::unique_lock<boost::shared_mutex>(buckets[i].mutex));
+}
+
+std::map<Key,Value> res;
+for(unsigned i=0;i<buckets.size();++i)
+{
+        for(bucket_iterator it=buckets[i].data.begin();
+            it!=buckets[i].data.end();
+            ++it)
+        {
+            res.insert(*it);//由于前面已经将bucket_type内的mutex lock
+        }
+}
+```
